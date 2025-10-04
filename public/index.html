@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Placement Cell Portal</title>
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <!-- Font Awesome for icons -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+        <!-- D3.js for charting -->
+
+        <style>
+            body {
+                font-family: 'Inter', sans-serif;
+            }
+
+            .glowing-btn {
+                animation: glow 1.5s ease-in-out infinite alternate;
+            }
+
+            @keyframes glow {
+                from {
+                    box-shadow: 0 0 5px #3b82f6, 0 0 10px #2563eb;
+                }
+
+                to {
+                    box-shadow: 0 0 20px #1d4ed8, 0 0 30px #1e40af;
+                }
+            }
+
+            /* --- GLASS BUTTON (single source-of-truth for border width/style) --- */
+            .glass-btn {
+                background-color: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border-style: solid;
+                border-width: 1px;
+                /* Controls border thickness */
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            }
+
+            /* Dark theme variant: only change color (keep width/style from .glass-btn) */
+            .dark .glass-btn {
+                background-color: rgba(0, 0, 0, 0.1);
+                /* --- Dark Mode Border --- */
+                border-color: #ffffff;
+                /* White border for dark mode */
+                color: #ffffff;
+            }
+
+            /* Light theme variant: only change color (keep width/style from .glass-btn) */
+            .light .glass-btn {
+                background-color: rgba(255, 255, 255, 0.5);
+                /* --- Light Mode Border --- */
+                border-color: #1f2937;
+                /* Dark border for light mode */
+                color: #1f2937;
+                /* Dark text for light mode */
+            }
+
+            .fade-out {
+                opacity: 0;
+                transition: opacity 0.5s ease-in-out;
+            }
+
+            .fade-in {
+                opacity: 1;
+                transition: opacity 0.5s ease-in-out;
+            }
+
+            .chart-container {
+                background-color: #1a202c;
+                /* Dark background for analytics section */
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                padding: 2rem;
+            }
+
+            .stat-card {
+                background-color: #2d3748;
+                /* Slightly lighter dark background */
+                border-radius: 8px;
+                padding: 1rem;
+                color: white;
+                text-align: center;
+            }
+
+            .loading-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(255, 255, 255, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10;
+            }
+
+            /* Light Theme Adjustments */
+            body.light {
+                background-color: #f3f4f6;
+                /* Light gray background */
+                color: #1f2937;
+                /* Dark gray text */
+            }
+
+            .light .bg-gray-100 {
+                background-color: #ffffff;
+            }
+
+            /* White card background */
+            .light .bg-gray-200 {
+                background-color: #e5e7eb;
+            }
+
+            /* Lighter gray for secondary elements */
+            .light .bg-gray-800 {
+                background-color: #f9fafb;
+            }
+
+            .light .bg-gray-900 {
+                background-color: #f9fafb;
+            }
+
+            .light .bg-gray-950 {
+                background-color: #f3f4f6;
+            }
+
+            .light .text-gray-900 {
+                color: #1f2937;
+            }
+
+            .light .text-gray-100 {
+                color: #1f2937;
+            }
+
+            .light .text-gray-800 {
+                color: #1f2937;
+            }
+
+            .light .text-gray-200 {
+                color: #374151;
+            }
+
+            .light .text-gray-300 {
+                color: #4b5563;
+            }
+
+            .light .border-gray-300 {
+                border-color: #d1d5db;
+            }
+
+            .light .border-gray-700 {
+                border-color: #e5e7eb;
+            }
+
+            .light .chart-container {
+                background-color: #f3f4f6;
+            }
+
+            .light .stat-card {
+                background-color: #e5e7eb;
+                color: #1f2937;
+            }
+
+            .light .glass-btn {
+                /* color already set above; border-color set above too */
+                /* keep this block for any additional light-specific tweaks */
+            }
+
+            .light .dark\:text-gray-400,
+            .light .dark\:text-gray-500,
+            .light .dark\:text-gray-700,
+            .light .dark\:text-gray-300,
+            .light .dark\:text-gray-200,
+            .light .dark\:text-gray-800 {
+                color: #374151 !important;
+            }
+
+            .light .dark\:bg-gray-800 {
+                background-color: #ffffff !important;
+            }
+
+            .light .dark\:bg-gray-900 {
+                background-color: #e5e7eb !important;
+            }
+
+            .light .dark\:border-gray-700 {
+                border-color: #d1d5db !important;
+            }
+
+            /* Light theme overrides for form inputs */
+            .light input,
+            .light select,
+            .light textarea {
+                background-color: #ffffff;
+                color: #1f2937;
+                border-color: #d1d5db;
+            }
+
+            .icon {
+                cursor: pointer;
+            }
+
+            /* Ensure elements using data-light-border / data-dark-border have a consistent 1px border */
+            [data-light-border][data-dark-border] {
+                border-style: solid;
+                border-width: 1px;
+                /* enforce 1px width always */
+                transition: border-color 200ms ease;
+            }
+
+            /* Prevent massive native outlines; keep an accessible focus-visible style */
+            button.glass-btn:focus {
+                outline: none;
+            }
+
+            button.glass-btn:focus-visible {
+                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+                border-color: rgba(59, 130, 246, 0.35);
+            }
+
+            /* Theme toggle specific focus (optional nicety) */
+            #themeToggle:focus {
+                outline: none;
+            }
+
+            #themeToggle:focus-visible {
+                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+                border-color: rgba(59, 130, 246, 0.35);
+            }
+        </style>
+    </head>
+
+    <body class="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+        <!-- Message Modal -->
+        <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl max-w-sm w-full transform -translate-y-8 transition-all duration-300">
+                <p id="modalMessage" class="text-center font-semibold text-lg text-gray-900 dark:text-gray-100"></p>
+                <button id="modalCloseBtn" class="mt-4 w-full py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">Close</button>
+            </div>
+        </div>
+
+        <!-- Theme Toggle Button -->
+        <div class="fixed top-6 right-6 z-50">
+            <button id="themeToggle" aria-label="Toggle theme" class="p-3 rounded-full shadow-lg transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" type="button">
+                <!-- Sun (outline) -->
+                <svg id="sun-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <!-- Moon (outline) -->
+                <svg id="moon-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+        </div>
+
+        <script>
+            (function() {
+                const root = document.documentElement; // <html>
+                const body = document.body; // <body>
+                const themeToggle = document.getElementById('themeToggle');
+                const sunIcon = document.getElementById('sun-icon');
+                const moonIcon = document.getElementById('moon-icon');
+
+                // Unified apply: toggle classes on both html and body (covers .light CSS + Tailwind dark:)
+                function applyTheme(mode, remember = false) {
+                    const isDark = mode === 'dark';
+
+                    // 1) Ensure both html and body have consistent dark/light classes
+                    root.classList.toggle('dark', isDark);
+                    root.classList.toggle('light', !isDark);
+                    body.classList.toggle('dark', isDark);
+                    body.classList.toggle('light', !isDark);
+
+                    // 2) Icon mapping (Sun in dark, Moon in light) — adjust if you want opposite.
+                    if (isDark) {
+                        sunIcon.classList.remove('hidden');
+                        moonIcon.classList.add('hidden');
+                    } else {
+                        moonIcon.classList.remove('hidden');
+                        sunIcon.classList.add('hidden');
+                    }
+
+                    // 3) Theme toggle button appearance (class-driven; no inline styles)
+                    themeToggle.classList.toggle('bg-gray-800', isDark);
+                    themeToggle.classList.toggle('text-white', isDark);
+                    themeToggle.classList.toggle('border-white', isDark);
+
+                    themeToggle.classList.toggle('bg-white', !isDark);
+                    themeToggle.classList.toggle('text-gray-800', !isDark);
+                    themeToggle.classList.toggle('border-gray-800', !isDark);
+
+                    // keep a 2px border so visual stays consistent
+                    themeToggle.classList.add('border-2');
+
+                    if (remember) localStorage.setItem('theme', mode);
+                }
+
+                function initTheme() {
+                    const saved = localStorage.getItem('theme');
+                    if (saved === 'dark' || saved === 'light') {
+                        applyTheme(saved);
+                    } else {
+                        applyTheme('dark'); // default to dark when no saved preference
+                    }
+                }
+
+                // Listen to OS preference changes only if user hasn't picked a theme
+                if (window.matchMedia) {
+                    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                        if (!localStorage.getItem('theme')) {
+                            applyTheme(e.matches ? 'dark' : 'light');
+                        }
+                    });
+                }
+
+                // Toggle handler — persists the user choice
+                themeToggle.addEventListener('click', () => {
+                    const newTheme = root.classList.contains('dark') ? 'light' : 'dark';
+                    applyTheme(newTheme, true);
+
+                    // call your login button updater if present
+                    if (typeof updateLoginButtonBorders === 'function') {
+                        // small timeout to let classes settle
+                        setTimeout(updateLoginButtonBorders, 40);
+                    }
+                });
+
+                // Initialize on load
+                initTheme();
+            })();
+        </script>
+
+        <!-- Main Container -->
+        <div class="container mx-auto p-6 md:p-12 space-y-12 rounded-3xl">
+
+            <!-- Login Page -->
+            <section id="loginPage" class="text-center">
+                <header class="text-center space-y-4 mb-12">
+                    <div class="h-20 flex items-center justify-center">
+                        <h1 id="dynamicHeadline" class="text-4xl md:text-6xl font-black text-gray-900 dark:text-gray-100">Integrated Placement Portal</h1>
+                    </div>
+                    <p class="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Your single source of truth for students, internships, and career opportunities.</p>
+                </header>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-6">
+                    <button id="studentLoginBtn" class="px-8 py-4 rounded-xl shadow-lg font-semibold text-lg transition duration-300 glass-btn">Login as Student</button>
+                    <button id="placementCellLoginBtn" class="px-8 py-4 rounded-xl shadow-lg font-semibold text-lg transition duration-300 glass-btn">Login as Placement Cell</button>
+                    <button id="mentorLoginBtn" class="px-8 py-4 rounded-xl shadow-lg font-semibold text-lg transition duration-300 glass-btn">Login as Mentor</button>
+                </div>
+            </section>
+
+            <!-- Content Area -->
+            <div id="contentArea" class="hidden">
+                <div class="flex flex-wrap justify-between items-center mb-6">
+                    <button id="backBtn" class="text-blue-500 font-semibold hover:underline transition duration-200 mb-4 md:mb-0">← Back to Login</button>
+                    <div class="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-4 py-3 rounded-xl text-sm break-words">
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Your User ID:</span> <span id="userIdDisplay" class="text-gray-500 dark:text-gray-400">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- Student Dashboard -->
+                <section id="studentDashboard" class="space-y-8 hidden">
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-200">Student Dashboard</h2>
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Your Profile</h3>
+                        <form id="studentProfileForm" class="space-y-4">
+                            <input type="text" id="profileName" placeholder="Full Name" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                            <input type="text" id="profileRoll" placeholder="Roll Number" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                            <input type="text" id="profileBranch" placeholder="Branch" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                            <input type="number" step="0.01" id="profileCgpa" placeholder="CGPA" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl shadow-lg glowing-btn transition duration-300">Update Profile</button>
+                        </form>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Submit Work</h3>
+                        <form id="submitWorkForm" class="space-y-4">
+                            <textarea id="workSubmission" rows="4" placeholder="Describe your work, project, or assignment..." required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"></textarea>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg glowing-btn transition duration-300">Submit Work</button>
+                        </form>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Recommended Internships</h3>
+                        <div id="recommendedInternships" class="space-y-4">
+                            <p class="text-gray-500 dark:text-gray-400">Update your profile to see recommendations.</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Your Feedback</h3>
+                        <div id="studentFeedback" class="space-y-4">
+                            <p class="text-gray-500 dark:text-gray-400">No feedback yet.</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Placement Cell Announcements</h3>
+                        <div id="announcementsSectionStudent" class="space-y-4">
+                            <p class="text-gray-500 dark:text-gray-400">No new announcements.</p>
+                        </div>
+                    </div>
+
+                    <!-- Career Tools Section with Gemini API Features -->
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">✨ Career Tools ✨</h3>
+                        <!-- Cover Letter Generator -->
+                        <div class="mb-6">
+                            <p class="text-sm text-gray-600 dark:text-gray-500 mb-4">Generate a personalized cover letter for any opportunity.</p>
+                            <div class="flex flex-col gap-4">
+                                <select id="coverLetterInternship" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                    <option value="">Select an Internship</option>
+                                </select>
+                                <button id="generateCoverLetterBtn" class="w-full bg-purple-600 text-white font-semibold py-3 rounded-xl hover:bg-purple-700 transition duration-300 shadow-lg glowing-btn">
+                                    ✨ Generate Cover Letter ✨
+                                </button>
+                                <button id="playCoverLetterBtn" class="w-full bg-gray-500 text-white font-semibold py-3 rounded-xl hover:bg-gray-600 transition duration-300 shadow-lg hidden">
+                                    <span id="playCoverLetterText">🔊 Play Cover Letter</span>
+                                </button>
+                            </div>
+                            <div id="coverLetterOutput" class="mt-4 p-4 rounded-xl bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-400 border border-gray-300 dark:border-gray-700 whitespace-pre-wrap">
+                                <!-- Generated content will appear here -->
+                            </div>
+                        </div>
+
+                        <!-- Resume Builder -->
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-500 mb-4">Build a professional resume from your information.</p>
+                            <form id="resumeForm" class="space-y-4 mb-4">
+                                <input type="text" id="resumeExperience" placeholder="Work Experience (e.g., 'Software Intern at Google, June 2023 - Aug 2023')" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                <input type="text" id="resumeProjects" placeholder="Key Projects (e.g., 'Developed a full-stack e-commerce site')" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                <input type="text" id="resumeSkills" placeholder="Skills (e.g., 'Python, JavaScript, React, Firestore')" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                <button type="submit" class="w-full bg-purple-600 text-white font-semibold py-3 rounded-xl hover:bg-purple-700 transition duration-300 shadow-lg glowing-btn">
+                                    ✨ Generate Resume ✨
+                                </button>
+                                <button id="playResumeBtn" class="w-full bg-gray-500 text-white font-semibold py-3 rounded-xl hover:bg-gray-600 transition duration-300 shadow-lg hidden">
+                                    <span id="playResumeText">🔊 Play Resume</span>
+                                </button>
+                            </form>
+                            <div id="resumeOutput" class="mt-4 p-4 rounded-xl bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-400 border border-gray-300 dark:border-gray-700 whitespace-pre-wrap">
+                                <!-- Generated content will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Placement Cell Dashboard -->
+                <section id="placementCellDashboard" class="hidden">
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-200 mb-8">Placement Cell Portal</h2>
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <!-- Left column: Post Internship, Job Description, Announcements -->
+                        <div class="w-full lg:w-1/2 space-y-8">
+                            <!-- Post Internship -->
+                            <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                                <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Post Internship</h3>
+                                <form id="addInternshipForm" class="space-y-4">
+                                    <input type="text" id="internshipCompany" placeholder="Company Name" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                    <input type="text" id="internshipBranch" placeholder="Required Branch (e.g., CSE)" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                    <input type="number" step="0.01" id="internshipCgpa" placeholder="Minimum CGPA" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                    <input type="number" id="internshipWeeks" placeholder="Duration (in weeks)" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg glowing-btn transition duration-300">Post Opportunity</button>
+                                </form>
+                            </div>
+
+                            <!-- Job Description Generator -->
+                            <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                                <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">✨ Job Description Generator ✨</h3>
+                                <form id="jobDescForm" class="space-y-4">
+                                    <input type="text" id="jobDescRole" placeholder="Role (e.g., 'Software Engineer Intern')" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                    <input type="text" id="jobDescKeywords" placeholder="Keywords (e.g., 'Python, Machine Learning, AI')" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                    <button type="submit" class="w-full bg-purple-600 text-white font-semibold py-3 rounded-xl hover:bg-purple-700 transition duration-300 shadow-lg glowing-btn">
+                                        ✨ Generate Job Description ✨
+                                    </button>
+                                </form>
+                                <div id="jobDescOutput" class="mt-4 p-4 rounded-xl bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-400 border border-gray-300 dark:border-gray-700 whitespace-pre-wrap">
+                                    <!-- Generated content will appear here -->
+                                </div>
+                            </div>
+
+                            <!-- Post Announcement -->
+                            <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                                <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Post an Announcement</h3>
+                                <form id="postAnnouncementForm" class="space-y-4">
+                                    <textarea id="announcementText" rows="4" placeholder="Type your announcement here..." required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"></textarea>
+                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg glowing-btn transition duration-300">Post Announcement</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Right column: Real-Time Analytics & Internships -->
+                        <div class="w-full lg:w-1/2 space-y-8">
+                            <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                                <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Real-time Analytics</h3>
+                                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                                    <div class="stat-card flex-1">
+                                        <p class="text-sm font-semibold text-gray-400 mb-1">Total Students Registered:</p>
+                                        <p id="totalStudents" class="text-3xl font-bold">0</p>
+                                    </div>
+                                    <div class="stat-card flex-1">
+                                        <p class="text-sm font-semibold text-gray-400 mb-1">Total Opportunities Posted:</p>
+                                        <p id="totalOpportunities" class="text-3xl font-bold">0</p>
+                                    </div>
+                                    <div class="stat-card flex-1">
+                                        <p class="text-sm font-semibold text-gray-400 mb-1">Total Applications:</p>
+                                        <p id="totalApplications" class="text-3xl font-bold">0</p>
+                                    </div>
+                                    <div class="stat-card flex-1">
+                                        <p class="text-sm font-semibold text-gray-400 mb-1">Total Matches Found:</p>
+                                        <p id="totalMatches" class="text-3xl font-bold">0</p>
+                                    </div>
+                                </div>
+
+                                <!-- Analytics Filter -->
+                                <div class="mb-4">
+                                    <label for="analyticsBranch" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Filter by Branch:</label>
+                                    <select id="analyticsBranch" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                                        <option value="All">All Branches</option>
+                                        <!-- Options will be populated by JS -->
+                                    </select>
+                                </div>
+
+                                <!-- Student Progress Tracker headline -->
+                                <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Student Progress Tracker</h3>
+                                <!-- Chart goes here -->
+                                <div class="chart-container relative dark:bg-gray-900">
+                                    <div id="analyticsLoading" class="loading-overlay hidden dark:bg-opacity-80">
+                                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-dashed border-purple-500"></div>
+                                    </div>
+                                    <svg id="analyticsChart" class="w-full" style="height: 400px;"></svg>
+                                </div>
+                            </div>
+
+                            <!-- Manage Applications -->
+                            <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                                <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Manage Applications</h3>
+                                <div id="manageApplications" class="space-y-4">
+                                    <p class="text-gray-500 dark:text-gray-400">No new applications to review.</p>
+                                </div>
+                            </div>
+
+                            <!-- Available Internships -->
+                            <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                                <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Available Internships</h3>
+                                <div id="availableInternships" class="space-y-4">
+                                    <p class="text-gray-500 dark:text-gray-400">Loading internships...</p>
+                                </div>
+                            </div>
+
+                            <!-- Announcements for Placement Cell -->
+                            <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                                <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Current Announcements</h3>
+                                <div id="announcementsSectionPlacement" class="space-y-4">
+                                    <p class="text-gray-500 dark:text-gray-400">No new announcements.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Mentor Dashboard -->
+                <section id="mentorDashboard" class="space-y-8 hidden">
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-200">Mentor Dashboard</h2>
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Student Profiles</h3>
+                        <div id="studentProfiles" class="space-y-4">
+                            <p class="text-gray-500 dark:text-gray-400">No student profiles found.</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Recent Student Submissions</h3>
+                        <div id="recentSubmissions" class="space-y-4">
+                            <p class="text-gray-500 dark:text-gray-400">No submissions found.</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-6 rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+                        <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-300">Placement Cell Announcements</h3>
+                        <div id="announcementsSectionMentor" class="space-y-4">
+                            <p class="text-gray-500 dark:text-gray-400">No new announcements.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <script type="module">
+            import {
+                initializeApp
+            } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+            import {
+                getAuth,
+                signInAnonymously,
+                signInWithCustomToken,
+                onAuthStateChanged
+            } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+            import {
+                getFirestore,
+                doc,
+                setDoc,
+                onSnapshot,
+                collection,
+                addDoc,
+                query,
+                getDocs,
+                where,
+                serverTimestamp,
+                deleteDoc,
+                updateDoc
+            } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+            import {
+                setLogLevel
+            } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+            import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+            setLogLevel('debug');
+
+            // Global variables provided by the Canvas environment
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = {
+                apiKey: "API_KEY_HERE",
+                authDomain: "PROJECT_AUTH_DOMAIN",
+                projectId: "PROJECT_ID",
+                storageBucket: "PROJECT_STORAGE_BUCKET",
+                messagingSenderId: "MESSAGING_SENDER_ID",
+                appId: "APP_ID",
+                measurementId: "MEASUREMENT_ID"
+            };
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+            const loginPage = document.getElementById('loginPage');
+            const contentArea = document.getElementById('contentArea');
+            const studentLoginBtn = document.getElementById('studentLoginBtn');
+            const placementCellLoginBtn = document.getElementById('placementCellLoginBtn');
+            const mentorLoginBtn = document.getElementById('mentorLoginBtn');
+            const backBtn = document.getElementById('backBtn');
+            const userIdDisplay = document.getElementById('userIdDisplay');
+            const studentDashboard = document.getElementById('studentDashboard');
+            const placementCellDashboard = document.getElementById('placementCellDashboard');
+            const mentorDashboard = document.getElementById('mentorDashboard');
+            const studentProfileForm = document.getElementById('studentProfileForm');
+            const recommendedInternships = document.getElementById('recommendedInternships');
+            const studentFeedbackSection = document.getElementById('studentFeedback');
+            const submitWorkForm = document.getElementById('submitWorkForm');
+            const workSubmission = document.getElementById('workSubmission');
+            const recentSubmissionsContainer = document.getElementById('recentSubmissions');
+            const coverLetterInternshipSelect = document.getElementById('coverLetterInternship');
+            const generateCoverLetterBtn = document.getElementById('generateCoverLetterBtn');
+            const playCoverLetterBtn = document.getElementById('playCoverLetterBtn');
+            const playCoverLetterText = document.getElementById('playCoverLetterText');
+            const coverLetterOutput = document.getElementById('coverLetterOutput');
+            const resumeForm = document.getElementById('resumeForm');
+            const resumeOutput = document.getElementById('resumeOutput');
+            const playResumeBtn = document.getElementById('playResumeBtn');
+            const playResumeText = document.getElementById('playResumeText');
+            const addInternshipForm = document.getElementById('addInternshipForm');
+            const availableInternships = document.getElementById('availableInternships');
+            const jobDescForm = document.getElementById('jobDescForm');
+            const jobDescOutput = document.getElementById('jobDescOutput');
+            const postAnnouncementForm = document.getElementById('postAnnouncementForm');
+            const announcementsSectionStudent = document.getElementById('announcementsSectionStudent');
+            const announcementsSectionPlacement = document.getElementById('announcementsSectionPlacement');
+            const announcementsSectionMentor = document.getElementById('announcementsSectionMentor');
+            const studentProfilesContainer = document.getElementById('studentProfiles');
+            const manageApplications = document.getElementById('manageApplications');
+            const messageModal = document.getElementById('messageModal');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+            const sunIcon = document.getElementById('sun-icon');
+            const moonIcon = document.getElementById('moon-icon');
+            const body = document.body;
+            const dynamicHeadline = document.getElementById('dynamicHeadline');
+
+            const totalStudentsEl = document.getElementById('totalStudents');
+            const totalOpportunitiesEl = document.getElementById('totalOpportunities');
+            const totalApplicationsEl = document.getElementById('totalApplications');
+            const totalMatchesEl = document.getElementById('totalMatches');
+            const analyticsBranchSelect = document.getElementById('analyticsBranch');
+            const analyticsChartSvg = document.getElementById('analyticsChart');
+            const analyticsLoading = document.getElementById('analyticsLoading');
+
+            const API_KEY = "YOUR_API_KEY_HERE_HERE";
+            const API_URL_TEXT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+            const API_URL_TTS = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${API_KEY}`;
+            const AUDIO_CONTEXT = new (window.AudioContext || window.webkitAudioContext)();
+            let source;
+
+
+            let db, auth, userId, currentUserRole;
+            let students = {};
+            let internships = [];
+            let submissions = [];
+            let applications = [];
+            let isAuthReady = false;
+            let listenersInitialized = false;
+            let branches = new Set(['All']);
+
+            const HEADLINES = [
+                "Your Career Starts Here",
+                "Connect with Mentors",
+                "Look for Your Dream Job",
+                "Post Opportunities",
+                "Track Your Career Growth",
+                "Build Your Profile",
+                "Integrated Placement Portal",
+                "Discover Internship Opportunities",
+            ];
+            let headlineIndex = 0;
+
+            const shuffleArray = (array) => {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            };
+
+            const updateHeadline = () => {
+                if (headlineIndex >= HEADLINES.length) {
+                    shuffleArray(HEADLINES);
+                    headlineIndex = 0;
+                }
+                dynamicHeadline.classList.remove('fade-in');
+                dynamicHeadline.classList.add('fade-out');
+                setTimeout(() => {
+                    dynamicHeadline.textContent = HEADLINES[headlineIndex];
+                    headlineIndex++;
+                    dynamicHeadline.classList.remove('fade-out');
+                    dynamicHeadline.classList.add('fade-in');
+                }, 500);
+            };
+
+            // Start the headline sequence on page load
+            document.addEventListener('DOMContentLoaded', () => {
+                updateHeadline();
+                setInterval(updateHeadline, 3000); // Change headline every 3 seconds
+            });
+
+            const showMessage = (message, type = 'success') => {
+                modalMessage.textContent = message;
+                modalMessage.classList.toggle('text-green-500', type === 'success');
+                modalMessage.classList.toggle('text-red-500', type === 'error');
+                messageModal.classList.remove('hidden');
+            };
+            modalCloseBtn.addEventListener('click', () => messageModal.classList.add('hidden'));
+
+            const switchView = (view) => {
+                studentDashboard.classList.add('hidden');
+                placementCellDashboard.classList.add('hidden');
+                mentorDashboard.classList.add('hidden');
+                if (view === 'student') studentDashboard.classList.remove('hidden');
+                if (view === 'placement') placementCellDashboard.classList.remove('hidden');
+                if (view === 'mentor') mentorDashboard.classList.remove('hidden');
+                currentUserRole = view;
+            };
+
+            const setupUIForRole = (role) => {
+                loginPage.classList.add('hidden');
+                contentArea.classList.remove('hidden');
+                userIdDisplay.textContent = userId;
+                switchView(role);
+
+                // Immediately render current data for the selected role so user doesn't need to refresh
+                if (role === 'student') {
+                    displayRecommendedInternships();
+                    populateCoverLetterDropdown();
+                    displayStudentFeedback();
+                } else if (role === 'placement') {
+                    displayAvailableInternships();
+                    displayManageApplications();
+                } else if (role === 'mentor') {
+                    displayStudentProfiles();
+                    displayRecentSubmissions();
+                }
+            };
+
+            const handleAuthChange = (user) => {
+                if (user) {
+                    userId = user.uid;
+                    // Check for a pending role in session storage
+                    const role = sessionStorage.getItem('pendingRole');
+                    if (role) {
+                        setupUIForRole(role);
+                        sessionStorage.removeItem('pendingRole');
+                    } else {
+                        // On refresh, don’t force student, just go back to login
+                        loginPage.classList.remove('hidden');
+                        contentArea.classList.add('hidden');
+                    }
+                } else {
+                    loginPage.classList.remove('hidden');
+                    contentArea.classList.add('hidden');
+                }
+                // Mark auth as ready BEFORE starting Firestore listeners
+                isAuthReady = true;
+
+                // Ensure listeners are attached exactly once and only once auth is ready
+                if (user && !listenersInitialized) {
+                    setupFirestoreListeners();
+                    listenersInitialized = true;
+                }
+            };
+
+            const handleLogin = (role) => {
+                sessionStorage.setItem('pendingRole', role);
+
+                // 👇 Immediately update UI so user doesn't need to refresh
+                setupUIForRole(role);
+
+                if (initialAuthToken) {
+                    signInWithCustomToken(auth, initialAuthToken).catch(err => {
+                        console.error("Custom token sign-in failed: ", err);
+                        signInAnonymously(auth);
+                    });
+                } else {
+                    signInAnonymously(auth);
+                }
+            };
+
+            studentLoginBtn.addEventListener('click', () => handleLogin('student'));
+            placementCellLoginBtn.addEventListener('click', () => handleLogin('placement'));
+            mentorLoginBtn.addEventListener('click', () => handleLogin('mentor'));
+            backBtn.addEventListener('click', () => {
+                // ensure any pending role is cleared so auth handler won't auto-open a dashboard
+                sessionStorage.removeItem('pendingRole');
+
+                // show login and hide the content area immediately (no reload)
+                loginPage.classList.remove('hidden');
+                contentArea.classList.add('hidden');
+
+                // reset UI state so nothing left showing as-if logged-in
+                currentUserRole = null;
+                userIdDisplay.textContent = 'Loading...';
+
+                // (optional) if you want to also sign out the anonymous user, uncomment:
+                // if (auth) signOut(auth).catch(err => console.warn('Sign out failed:', err));
+            });
+
+            const initFirebase = () => {
+                if (Object.keys(firebaseConfig).length) {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    onAuthStateChanged(auth, handleAuthChange);
+                    // Set up real-time listeners after auth is ready
+
+                } else {
+                    console.error("Firebase config is not available.");
+                    showMessage("Firebase is not configured. Please check the environment.", 'error');
+                }
+            };
+
+            const setupFirestoreListeners = () => {
+                if (!isAuthReady) return;
+
+                // Student profiles listener (for all roles)
+                const studentsColRef = collection(db, `artifacts/${appId}/public/data/students`);
+                onSnapshot(studentsColRef, (snapshot) => {
+                    students = {};
+                    snapshot.forEach(doc => {
+                        students[doc.id] = {
+                            ...doc.data(),
+                            id: doc.id
+                        };
+                        branches.add(doc.data().branch);
+                    });
+                    updateAnalytics();
+                    updateBranchesDropdown();
+                    if (currentUserRole === 'mentor') {
+                        displayStudentProfiles();
+                    } else if (currentUserRole === 'student') {
+                        displayRecommendedInternships();
+                    }
+                }, (error) => {
+                    console.error("Error fetching students: ", error);
+                });
+
+                // Internship listener (for all roles)
+                const internshipsColRef = collection(db, `artifacts/${appId}/public/data/internships`);
+                onSnapshot(internshipsColRef, (snapshot) => {
+                    internships = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    if (currentUserRole === 'student') {
+                        displayRecommendedInternships();
+                        populateCoverLetterDropdown();
+                    } else if (currentUserRole === 'placement') {
+                        displayAvailableInternships();
+                    }
+                    updateAnalytics();
+                }, (error) => {
+                    console.error("Error fetching internships: ", error);
+                });
+
+                // Submissions listener (for all roles)
+                const submissionsColRef = collection(db, `artifacts/${appId}/public/data/submissions`);
+                onSnapshot(submissionsColRef, (snapshot) => {
+                    submissions = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    if (currentUserRole === 'mentor') {
+                        displayRecentSubmissions();
+                    } else if (currentUserRole === 'student') {
+                        displayStudentFeedback();
+                    }
+                }, (error) => {
+                    console.error("Error fetching submissions: ", error);
+                });
+
+                // Applications listener (for all roles)
+                const applicationsColRef = collection(db, `artifacts/${appId}/public/data/applications`);
+                onSnapshot(applicationsColRef, (snapshot) => {
+                    applications = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    if (currentUserRole === 'student') {
+                        displayRecommendedInternships();
+                    } else if (currentUserRole === 'placement') {
+                        displayManageApplications();
+                    }
+                    updateAnalytics();
+                }, (error) => {
+                    console.error("Error fetching applications: ", error);
+                });
+
+                // Announcements listener (for all roles)
+                const announcementsColRef = collection(db, `artifacts/${appId}/public/data/announcements`);
+                onSnapshot(announcementsColRef, (snapshot) => {
+                    const announcements = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    displayAnnouncements(announcements);
+                }, (error) => {
+                    console.error("Error fetching announcements: ", error);
+                });
+            };
+
+            // --- Student Dashboard Functions ---
+            studentProfileForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('profileName').value;
+                const roll = document.getElementById('profileRoll').value;
+                const branch = document.getElementById('profileBranch').value;
+                const cgpa = parseFloat(document.getElementById('profileCgpa').value);
+                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+                try {
+                    await setDoc(studentDocRef, {
+                        name,
+                        roll,
+                        branch,
+                        cgpa,
+                        userId: userId
+                    }, {
+                        merge: true
+                    });
+                    showMessage("Profile updated successfully!");
+                } catch (error) {
+                    console.error("Error updating profile: ", error);
+                    showMessage("Failed to update profile. " + error.message, 'error');
+                }
+            });
+
+            submitWorkForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const work = workSubmission.value;
+                const studentData = students[userId];
+                if (!studentData) {
+                    showMessage("Please update your profile first.", 'error');
+                    return;
+                }
+                try {
+                    const submissionsColRef = collection(db, `artifacts/${appId}/public/data/submissions`);
+                    await addDoc(submissionsColRef, {
+                        studentId: userId,
+                        studentName: studentData.name,
+                        studentRoll: studentData.roll,
+                        studentBranch: studentData.branch,
+                        submission: work,
+                        timestamp: serverTimestamp()
+                    });
+                    showMessage("Work submitted successfully!");
+                    workSubmission.value = "";
+                } catch (error) {
+                    console.error("Error submitting work: ", error);
+                    showMessage("Failed to submit work. " + error.message, 'error');
+                }
+            });
+
+            const displayRecommendedInternships = () => {
+                const studentData = students[userId];
+                recommendedInternships.innerHTML = '';
+                const appliedInternshipMap = new Map();
+                applications
+                    .filter(app => app.studentId === userId)
+                    .forEach(app => {
+                        const prev = appliedInternshipMap.get(app.internshipId);
+                        // get timestamps safely (Firestore Timestamp or number)
+                        const appTs = app.timestamp ? (app.timestamp.toMillis ? app.timestamp.toMillis() : app.timestamp) : 0;
+                        const prevTs = prev && prev.timestamp ? (prev.timestamp.toMillis ? prev.timestamp.toMillis() : prev.timestamp) : 0;
+                        if (!prev || appTs >= prevTs) {
+                            appliedInternshipMap.set(app.internshipId, app);
+                        }
+                    });
+                // Now appliedInternshipMap stores the most recent application object for each internshipId
+                // Use appliedInternshipMap.get(internship.id)?.status to read the status
+                const matchingInternships = [];
+
+                if (studentData) {
+                    internships.forEach(internship => {
+                        const requiredBranch = internship.branch.toLowerCase();
+                        const studentBranch = studentData.branch.toLowerCase();
+                        const requiredCgpa = internship.cgpa;
+                        const studentCgpa = studentData.cgpa;
+                        if (requiredBranch === studentBranch && studentCgpa >= requiredCgpa) {
+                            matchingInternships.push(internship);
+                        }
+                    });
+                }
+
+                if (matchingInternships.length > 0) {
+                    matchingInternships.forEach(internship => {
+                        const applicationStatus = appliedInternshipMap.get(internship.id)?.status;
+                        let buttonText = 'Apply Now';
+                        let buttonClass = 'bg-blue-600 hover:bg-blue-700';
+                        let statusText = '';
+                        let buttonDisabled = '';
+
+                        if (applicationStatus) {
+                            switch (applicationStatus) {
+                                case 'pending':
+                                    buttonText = 'Pending';
+                                    buttonClass = 'bg-yellow-500 cursor-not-allowed';
+                                    statusText = '<p class="text-sm text-yellow-500 font-bold mt-2">Status: Pending</p>';
+                                    buttonDisabled = 'disabled';
+                                    break;
+                                case 'approved':
+                                    buttonText = 'Approved!';
+                                    buttonClass = 'bg-green-500 cursor-not-allowed';
+                                    statusText = '<p class="text-sm text-green-500 font-bold mt-2">Status: Approved</p>';
+                                    buttonDisabled = 'disabled';
+                                    break;
+                                case 'rejected':
+                                    buttonText = 'Apply Again';
+                                    buttonClass = 'bg-red-500 hover:bg-red-600';
+                                    statusText = '<p class="text-sm text-red-500 font-bold mt-2">Status: Rejected</p>';
+                                    break;
+                            }
+                        }
+
+                        const card = document.createElement('div');
+                        card.className = "bg-gray-200 dark:bg-gray-700 p-4 rounded-xl";
+                        card.innerHTML = `
+                        <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100">${internship.company}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Branch:</strong> ${internship.branch}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Min CGPA:</strong> ${internship.cgpa}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Duration:</strong> ${internship.weeks} weeks</p>
+                        ${statusText}
+                        <button class="apply-btn w-full mt-2 text-white font-semibold py-2 rounded-xl transition duration-300 ${buttonClass}" ${buttonDisabled} data-internship-id="${internship.id}">${buttonText}</button>
+                    `;
+                        recommendedInternships.appendChild(card);
+                    });
+                    document.querySelectorAll('.apply-btn').forEach(button => {
+                        button.addEventListener('click', async (e) => {
+                            const internshipId = e.currentTarget.dataset.internshipId;
+                            await handleApply(internshipId);
+                        });
+                    });
+                } else {
+                    recommendedInternships.innerHTML = `<p class="text-gray-500 dark:text-gray-400">No matching internships found. Update your profile or check back later.</p>`;
+                }
+            };
+
+            const handleApply = async (internshipId) => {
+                try {
+                    // find an existing application doc for this student + internship (from your in-memory `applications` array)
+                    const existingApp = applications.find(a => a.studentId === userId && a.internshipId === internshipId);
+
+                    if (existingApp) {
+                        // if it's already approved, do not let them reapply
+                        if (existingApp.status === 'approved') {
+                            showMessage("Your previous application is already approved.", 'error');
+                            return;
+                        }
+
+                        // Otherwise, update the same application document back to 'pending'
+                        // NOTE: this assumes the application object has the document id in `existingApp.id`
+                        const appDocRef = doc(db, `artifacts/${appId}/public/data/applications`, existingApp.id);
+                        await updateDoc(appDocRef, {
+                            status: 'pending',
+                            timestamp: serverTimestamp()
+                        });
+
+                        showMessage("Application re-submitted and set to pending.");
+                        return;
+                    }
+
+                    // No existing application -> create a new one
+                    const applicationsColRef = collection(db, `artifacts/${appId}/public/data/applications`);
+                    await addDoc(applicationsColRef, {
+                        studentId: userId,
+                        internshipId: internshipId,
+                        status: 'pending',
+                        timestamp: serverTimestamp()
+                    });
+
+                    showMessage("Application submitted successfully!");
+                } catch (error) {
+                    console.error("Error submitting application: ", error);
+                    showMessage("Failed to submit application. " + (error.message || error));
+                }
+            };
+
+            const displayStudentFeedback = () => {
+                studentFeedbackSection.innerHTML = '';
+                const feedbackForUser = submissions.filter(s => s.studentId === userId && s.feedback);
+                if (feedbackForUser.length > 0) {
+                    feedbackForUser.forEach(submission => {
+                        const card = document.createElement('div');
+                        card.className = "bg-gray-200 dark:bg-gray-700 p-4 rounded-xl";
+                        card.innerHTML = `
+                        <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100">Feedback for your submission:</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Submitted:</strong> ${submission.timestamp ? new Date(submission.timestamp.toDate()).toLocaleString() : 'N/A'}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">${submission.feedback}</p>
+                    `;
+                        studentFeedbackSection.appendChild(card);
+                    });
+                } else {
+                    studentFeedbackSection.innerHTML = `<p class="text-gray-500 dark:text-gray-400">No feedback yet.</p>`;
+                }
+            };
+
+            // --- Placement Cell Functions ---
+            addInternshipForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const company = document.getElementById('internshipCompany').value;
+                const branch = document.getElementById('internshipBranch').value;
+                const cgpa = parseFloat(document.getElementById('internshipCgpa').value);
+                const weeks = parseInt(document.getElementById('internshipWeeks').value);
+                try {
+                    const internshipsColRef = collection(db, `artifacts/${appId}/public/data/internships`);
+                    await addDoc(internshipsColRef, {
+                        company,
+                        branch,
+                        cgpa,
+                        weeks,
+                        timestamp: serverTimestamp()
+                    });
+                    showMessage("Opportunity posted successfully!");
+                    addInternshipForm.reset();
+                } catch (error) {
+                    console.error("Error posting opportunity: ", error);
+                    showMessage("Failed to post opportunity. " + error.message, 'error');
+                }
+            });
+
+            jobDescForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const role = document.getElementById('jobDescRole').value;
+                const keywords = document.getElementById('jobDescKeywords').value;
+                jobDescOutput.textContent = "Generating...";
+                try {
+                    const prompt = `Generate a professional job description for a ${role} position. The ideal candidate should have skills in: ${keywords}. The description should be a single, detailed paragraph.`;
+                    await generateAndDisplayContent(prompt, jobDescOutput);
+                } catch (error) {
+                    console.error("Error generating job description:", error);
+                    showMessage("Failed to generate job description. " + error.message, 'error');
+                    jobDescOutput.textContent = "Error generating content.";
+                }
+            });
+
+            const displayAvailableInternships = () => {
+                availableInternships.innerHTML = '';
+                if (internships.length > 0) {
+                    internships.forEach(internship => {
+                        const card = document.createElement('div');
+                        card.className = "bg-gray-200 dark:bg-gray-700 p-4 rounded-xl relative";
+                        card.innerHTML = `
+                        <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100">${internship.company}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Branch:</strong> ${internship.branch}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Min CGPA:</strong> ${internship.cgpa}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Duration:</strong> ${internship.weeks} weeks</p>
+                        <button class="delete-btn absolute top-2 right-2 p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition" data-id="${internship.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                        availableInternships.appendChild(card);
+                    });
+                    document.querySelectorAll('.delete-btn').forEach(button => {
+                        button.addEventListener('click', async (e) => {
+                            const id = e.currentTarget.dataset.id;
+                            await deleteInternship(id);
+                        });
+                    });
+                } else {
+                    availableInternships.innerHTML = `<p class="text-gray-500 dark:text-gray-400">No internships available.</p>`;
+                }
+            };
+
+            const deleteInternship = async (id) => {
+                try {
+                    await deleteDoc(doc(db, `artifacts/${appId}/public/data/internships`, id));
+                    showMessage("Internship deleted successfully!");
+                } catch (error) {
+                    console.error("Error deleting internship: ", error);
+                    showMessage("Failed to delete internship. " + error.message, 'error');
+                }
+            };
+
+            postAnnouncementForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const announcementText = document.getElementById('announcementText').value;
+                try {
+                    const announcementsColRef = collection(db, `artifacts/${appId}/public/data/announcements`);
+                    await addDoc(announcementsColRef, {
+                        announcement: announcementText,
+                        timestamp: serverTimestamp(),
+                        posterId: userId,
+                        posterRole: currentUserRole
+                    });
+                    showMessage("Announcement posted successfully!");
+                    postAnnouncementForm.reset();
+                } catch (error) {
+                    console.error("Error posting announcement: ", error);
+                    showMessage("Failed to post announcement. " + error.message, 'error');
+                }
+            });
+
+            // --- Placement Cell Application Management Functions ---
+            const displayManageApplications = () => {
+                manageApplications.innerHTML = '';
+                const pendingApplications = applications.filter(app => app.status === 'pending');
+                if (pendingApplications.length === 0) {
+                    manageApplications.innerHTML = `<p class="text-gray-500 dark:text-gray-400">No new applications to review.</p>`;
+                    return;
+                }
+
+                pendingApplications.forEach(app => {
+                    const student = students[app.studentId] || {
+                        name: 'Unknown Student',
+                        roll: 'N/A',
+                        branch: 'N/A'
+                    };
+                    const internship = internships.find(i => i.id === app.internshipId) || {
+                        company: 'Unknown Company',
+                        branch: 'N/A'
+                    };
+
+                    const card = document.createElement('div');
+                    card.className = "bg-gray-200 dark:bg-gray-700 p-4 rounded-xl";
+                    card.innerHTML = `
+                    <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100">${student.name} - ${internship.company}</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Student Roll No:</strong> ${student.roll}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Branch:</strong> ${student.branch}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Applied for:</strong> ${internship.company} (${internship.branch} branch)</p>
+                    <div class="flex gap-2 mt-4">
+                        <button class="approve-btn flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-xl transition duration-300" data-id="${app.id}">Approve</button>
+                        <button class="reject-btn flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-xl transition duration-300" data-id="${app.id}">Reject</button>
+                    </div>
+                `;
+                    manageApplications.appendChild(card);
+                });
+
+                document.querySelectorAll('.approve-btn').forEach(button => {
+                    button.addEventListener('click', (e) => updateApplicationStatus(e.target.dataset.id, 'approved'));
+                });
+                document.querySelectorAll('.reject-btn').forEach(button => {
+                    button.addEventListener('click', (e) => updateApplicationStatus(e.target.dataset.id, 'rejected'));
+                });
+            };
+
+            const updateApplicationStatus = async (appIdToUpdate, status) => {
+                try {
+                    const docRef = doc(db, `artifacts/${appId}/public/data/applications`, appIdToUpdate);
+                    await updateDoc(docRef, {
+                        status: status
+                    });
+                    showMessage(`Application ${status} successfully!`);
+                } catch (error) {
+                    console.error("Error updating application status: ", error);
+                    showMessage("Failed to update application status. " + error.message, 'error');
+                }
+            };
+
+            // --- Mentor Dashboard Functions ---
+            const displayStudentProfiles = () => {
+                studentProfilesContainer.innerHTML = '';
+                if (Object.keys(students).length > 0) {
+                    Object.values(students).forEach(student => {
+                        const card = document.createElement('div');
+                        card.className = "bg-gray-200 dark:bg-gray-700 p-4 rounded-xl";
+                        card.innerHTML = `
+                        <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100">${student.name}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Roll No:</strong> ${student.roll}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Branch:</strong> ${student.branch}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>CGPA:</strong> ${student.cgpa}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>User ID:</strong> <span class="break-all">${student.userId}</span></p>
+                    `;
+                        studentProfilesContainer.appendChild(card);
+                    });
+                } else {
+                    studentProfilesContainer.innerHTML = `<p class="text-gray-500 dark:text-gray-400">No student profiles available.</p>`;
+                }
+            };
+
+            const displayRecentSubmissions = () => {
+                recentSubmissionsContainer.innerHTML = '';
+                if (submissions.length > 0) {
+                    const sortedSubmissions = submissions.sort((a, b) => b.timestamp?.toDate() - a.timestamp?.toDate());
+                    sortedSubmissions.forEach(submission => {
+                        const card = document.createElement('div');
+                        card.className = "bg-gray-200 dark:bg-gray-700 p-4 rounded-xl";
+                        card.innerHTML = `
+                        <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100">Submission from ${submission.studentName}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Branch:</strong> ${submission.studentBranch}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><strong>User ID:</strong> <span class="break-all">${submission.studentId}</span></p>
+                        <p class="text-gray-800 dark:text-gray-200 mt-2 whitespace-pre-wrap">${submission.submission}</p>
+                        <button class="give-feedback-btn w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-xl mt-4" data-id="${submission.id}">
+                            Give Feedback
+                        </button>
+                    `;
+                        recentSubmissionsContainer.appendChild(card);
+                    });
+
+                    document.querySelectorAll('.give-feedback-btn').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const submissionId = e.target.dataset.id;
+                            const parent = e.target.parentElement;
+
+                            // Check if a feedback form already exists
+                            if (!parent.querySelector('.feedback-form')) {
+                                const formHtml = `
+                                <form class="feedback-form mt-4 space-y-2">
+                                    <textarea rows="3" placeholder="Enter your feedback here..." class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 transition duration-200 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"></textarea>
+                                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-xl">
+                                        Submit Feedback
+                                    </button>
+                                </form>
+                            `;
+                                parent.insertAdjacentHTML('beforeend', formHtml);
+                                parent.querySelector('.feedback-form').addEventListener('submit', async (formEvent) => {
+                                    formEvent.preventDefault();
+                                    const feedbackText = parent.querySelector('textarea').value;
+                                    if (feedbackText) {
+                                        try {
+                                            const docRef = doc(db, `artifacts/${appId}/public/data/submissions`, submissionId);
+                                            await setDoc(docRef, {
+                                                feedback: feedbackText
+                                            }, {
+                                                merge: true
+                                            });
+                                            showMessage("Feedback submitted successfully!");
+                                            parent.querySelector('.feedback-form').remove();
+                                        } catch (error) {
+                                            console.error("Error submitting feedback:", error);
+                                            showMessage("Failed to submit feedback. " + error.message, 'error');
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    });
+
+                } else {
+                    recentSubmissionsContainer.innerHTML = `<p class="text-gray-500 dark:text-gray-400">No submissions found.</p>`;
+                }
+            };
+
+            // --- Announcements Function ---
+            const displayAnnouncements = (announcements) => {
+                const sections = [announcementsSectionStudent, announcementsSectionPlacement, announcementsSectionMentor];
+                sections.forEach(section => {
+                    section.innerHTML = '';
+                    if (announcements.length > 0) {
+                        const sortedAnnouncements = announcements.sort((a, b) => b.timestamp?.toDate() - a.timestamp?.toDate());
+                        sortedAnnouncements.forEach(announcement => {
+                            const card = document.createElement('div');
+                            card.className = "bg-gray-200 dark:bg-gray-700 p-4 rounded-xl";
+                            const date = announcement.timestamp ? new Date(announcement.timestamp.toDate()).toLocaleString() : 'N/A';
+                            card.innerHTML = `
+                            <p class="text-sm font-semibold text-blue-500 mb-1">New Announcement</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Posted on: ${date}</p>
+                            <p class="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">${announcement.announcement}</p>
+                        `;
+                            section.appendChild(card);
+                        });
+                    } else {
+                        section.innerHTML = `<p class="text-gray-500 dark:text-gray-400">No new announcements.</p>`;
+                    }
+                });
+            };
+
+            // --- Analytics and Charting Functions ---
+            const updateBranchesDropdown = () => {
+                analyticsBranchSelect.innerHTML = '';
+                const allOption = document.createElement('option');
+                allOption.value = 'All';
+                allOption.textContent = 'All Branches';
+                analyticsBranchSelect.appendChild(allOption);
+                Array.from(branches).sort().forEach(branch => {
+                    if (branch !== 'All') {
+                        const option = document.createElement('option');
+                        option.value = branch;
+                        option.textContent = branch;
+                        analyticsBranchSelect.appendChild(option);
+                    }
+                });
+            };
+
+            analyticsBranchSelect.addEventListener('change', () => {
+                const selectedBranch = analyticsBranchSelect.value;
+                updateAnalyticsChart(selectedBranch);
+            });
+
+            const updateAnalytics = () => {
+                const totalStudents = Object.keys(students).length;
+                const totalInternships = internships.length;
+                const totalApplications = applications.length;
+                const totalMatches = Object.values(students).filter(student =>
+                    internships.some(internship =>
+                        internship.branch.toLowerCase() === student.branch.toLowerCase() &&
+                        student.cgpa >= internship.cgpa
+                    )
+                ).length;
+                totalStudentsEl.textContent = totalStudents;
+                totalOpportunitiesEl.textContent = totalInternships;
+                totalApplicationsEl.textContent = totalApplications;
+                totalMatchesEl.textContent = totalMatches;
+                updateAnalyticsChart(analyticsBranchSelect.value);
+            };
+
+            const updateAnalyticsChart = (branchFilter) => {
+                analyticsChartSvg.innerHTML = '';
+                analyticsLoading.classList.remove('hidden');
+
+                setTimeout(() => {
+                    analyticsLoading.classList.add('hidden');
+
+                    const data = [];
+                    Object.values(students).forEach(student => {
+                        if (branchFilter === 'All' || student.branch.toLowerCase() === branchFilter.toLowerCase()) {
+                            data.push(student.cgpa);
+                        }
+                    });
+
+                    if (data.length === 0) {
+                        const noDataText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        noDataText.setAttribute('x', '50%');
+                        noDataText.setAttribute('y', '50%');
+                        noDataText.setAttribute('dominant-baseline', 'middle');
+                        noDataText.setAttribute('text-anchor', 'middle');
+                        noDataText.setAttribute('fill', 'gray');
+                        noDataText.textContent = "No data available for this branch.";
+                        analyticsChartSvg.appendChild(noDataText);
+                        return;
+                    }
+
+                    // D3.js chart generation
+                    const svg = d3.select("#analyticsChart");
+                    const width = +svg.node().getBoundingClientRect().width;
+                    const height = +svg.node().getBoundingClientRect().height;
+                    const margin = {
+                        top: 20,
+                        right: 30,
+                        bottom: 40,
+                        left: 50
+                    };
+                    const chartWidth = width - margin.left - margin.right;
+                    const chartHeight = height - margin.top - margin.bottom;
+
+                    // Guard: if container not measured (e.g. hidden), retry drawing shortly to avoid negative heights
+                    if (chartWidth <= 0 || chartHeight <= 0) {
+                        // schedule a retry — this avoids setting negative rect heights when SVG is hidden
+                        setTimeout(() => {
+                            try {
+                                updateAnalytics();
+                            } catch (e) {
+                                /* ignore if function not available */
+                            }
+                        }, 200);
+                        return;
+                    }
+
+                    const g = svg.append("g")
+                        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                    const x = d3.scaleLinear()
+                        .domain([0, 10])
+                        .range([0, chartWidth]);
+
+                    const histogram = d3.histogram()
+                        .value(d => d)
+                        .domain(x.domain())
+                        .thresholds(x.ticks(10));
+
+                    const bins = histogram(data);
+
+                    const y = d3.scaleLinear()
+                        .domain([0, d3.max(bins, d => d.length)])
+                        .nice()
+                        .range([chartHeight, 0]);
+
+                    g.selectAll("rect")
+                        .data(bins)
+                        .enter().append("rect")
+                        .attr("x", d => x(d.x0) + 1)
+                        .attr("y", d => y(d.length))
+                        .attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - 1))
+                        .attr("height", d => chartHeight - y(d.length))
+                        .attr("fill", "#6366f1")
+                        .attr("rx", 5);
+
+                    g.append("g")
+                        .attr("class", "axis axis--x")
+                        .attr("transform", `translate(0,${chartHeight})`)
+                        .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0))
+                        .selectAll("text")
+                        .attr("fill", "#cbd5e1");
+
+                    g.append("text")
+                        .attr("transform", `translate(${chartWidth / 2}, ${chartHeight + margin.bottom - 5})`)
+                        .style("text-anchor", "middle")
+                        .attr("fill", "#9ca3af")
+                        .text("CGPA");
+
+                    g.append("g")
+                        .attr("class", "axis axis--y")
+                        .call(d3.axisLeft(y).ticks(5).tickSizeOuter(0))
+                        .selectAll("text")
+                        .attr("fill", "#cbd5e1");
+
+                    g.append("text")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 0 - margin.left)
+                        .attr("x", 0 - (chartHeight / 2))
+                        .attr("dy", "1em")
+                        .style("text-anchor", "middle")
+                        .attr("fill", "#9ca3af")
+                        .text("Number of Students");
+
+                }, 500);
+            };
+
+            // --- Gemini API Functions ---
+
+            // Helper function for API calls with exponential backoff
+            const fetchWithBackoff = async (url, options, retries = 3, delay = 1000) => {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        if (response.status === 429 && retries > 0) {
+                            console.warn(`Rate limit hit. Retrying in ${delay / 1000}s...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            return fetchWithBackoff(url, options, retries - 1, delay * 2);
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response;
+                } catch (error) {
+                    console.error("Fetch failed: ", error);
+                    if (retries > 0) {
+                        console.warn(`Request failed. Retrying in ${delay / 1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return fetchWithBackoff(url, options, retries - 1, delay * 2);
+                    }
+                    throw error;
+                }
+            };
+
+            // Generic function to generate and display content
+            const generateAndDisplayContent = async (prompt, outputElement) => {
+                outputElement.textContent = "Generating...";
+                try {
+                    const payload = {
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }],
+                        generationConfig: {
+                            responseMimeType: "text/plain"
+                        },
+                    };
+                    const response = await fetchWithBackoff(API_URL_TEXT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "No content generated.";
+                    outputElement.textContent = text;
+                } catch (error) {
+                    console.error("Error generating content:", error);
+                    outputElement.textContent = `Error generating content: ${error && error.message ? error.message : error}`;
+                }
+            };
+
+            // Cover Letter Generator
+            const populateCoverLetterDropdown = () => {
+                coverLetterInternshipSelect.innerHTML = '<option value="">Select an Internship</option>';
+                internships.forEach(internship => {
+                    const option = document.createElement('option');
+                    option.value = internship.id;
+                    option.textContent = `${internship.company} - ${internship.branch}`;
+                    option.dataset.company = internship.company;
+                    option.dataset.branch = internship.branch;
+                    coverLetterInternshipSelect.appendChild(option);
+                });
+            };
+
+            generateCoverLetterBtn.addEventListener('click', async () => {
+                const selectedOption = coverLetterInternshipSelect.options[coverLetterInternshipSelect.selectedIndex];
+                if (!selectedOption.value) {
+                    showMessage("Please select an internship.", 'error');
+                    return;
+                }
+                const studentData = students[userId];
+                if (!studentData || !studentData.name || !studentData.branch || !studentData.cgpa) {
+                    showMessage("Please fill out your profile first.", 'error');
+                    return;
+                }
+                const company = selectedOption.dataset.company;
+                const prompt = `Write a professional cover letter for a student named ${studentData.name} from the ${studentData.branch} branch, with a CGPA of ${studentData.cgpa}, applying to an internship at ${company}. The cover letter should be a single, concise paragraph, highlighting their skills and suitability for the role.`;
+                coverLetterOutput.textContent = "Generating...";
+                playCoverLetterBtn.classList.add('hidden');
+                await generateAndDisplayContent(prompt, coverLetterOutput);
+                playCoverLetterBtn.classList.remove('hidden');
+            });
+
+            // Resume Builder
+            resumeForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const studentData = students[userId];
+                if (!studentData || !studentData.name) {
+                    showMessage("Please fill out your profile first.", 'error');
+                    return;
+                }
+                const experience = document.getElementById('resumeExperience').value;
+                const projects = document.getElementById('resumeProjects').value;
+                const skills = document.getElementById('resumeSkills').value;
+                const prompt = `Generate a professional resume for a student.
+            Name: ${studentData.name}
+            Branch: ${studentData.branch}
+            CGPA: ${studentData.cgpa}
+            Work Experience: ${experience || 'N/A'}
+            Projects: ${projects || 'N/A'}
+            Skills: ${skills || 'N/A'}
+            Format the response clearly and concisely, including a summary and the sections listed above.`;
+                resumeOutput.textContent = "Generating...";
+                playResumeBtn.classList.add('hidden');
+                await generateAndDisplayContent(prompt, resumeOutput);
+                playResumeBtn.classList.remove('hidden');
+            });
+
+            // --- TTS Functions ---
+            const playAudioFromText = async (text, buttonTextElement) => {
+                if (source) {
+                    source.stop();
+                    source = null;
+                    buttonTextElement.textContent = "🔊 Play";
+                    return;
+                }
+
+                buttonTextElement.textContent = "Generating...";
+                const payload = {
+                    contents: [{
+                        parts: [{
+                            text: text
+                        }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: {
+                                    voiceName: "Charon"
+                                }
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                try {
+                    const response = await fetchWithBackoff(API_URL_TTS, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    const part = result?.candidates?.[0]?.content?.parts?.[0];
+                    const audioData = part?.inlineData?.data;
+                    const mimeType = part?.inlineData?.mimeType;
+
+                    if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                        const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10);
+                        const pcmData = base64ToArrayBuffer(audioData);
+                        const audioBuffer = AUDIO_CONTEXT.createBuffer(1, pcmData.byteLength / 2, sampleRate);
+                        const nowBuffering = audioBuffer.getChannelData(0);
+                        const pcm16 = new Int16Array(pcmData);
+
+                        for (let i = 0; i < pcm16.length; i++) {
+                            nowBuffering[i] = pcm16[i] / 32768;
+                        }
+
+                        source = AUDIO_CONTEXT.createBufferSource();
+                        source.buffer = audioBuffer;
+                        source.connect(AUDIO_CONTEXT.destination);
+                        source.onended = () => {
+                            source = null;
+                            buttonTextElement.textContent = "🔊 Play";
+                        };
+                        source.start();
+                        buttonTextElement.textContent = "⏹ Stop";
+                    } else {
+                        throw new Error("Invalid audio data from API.");
+                    }
+                } catch (error) {
+                    console.error("Error generating/playing audio:", error);
+                    showMessage("Failed to generate audio. Please try again.", 'error');
+                    buttonTextElement.textContent = "🔊 Play";
+                }
+            };
+
+            const base64ToArrayBuffer = (base64) => {
+                const binaryString = atob(base64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return bytes.buffer;
+            };
+
+            playCoverLetterBtn.addEventListener('click', () => {
+                const text = coverLetterOutput.textContent;
+                if (text && text !== "Generating..." && text !== "Error generating content. Please try again.") {
+                    playAudioFromText(text, playCoverLetterText);
+                } else {
+                    showMessage("Please generate a cover letter first.", 'error');
+                }
+            });
+
+            playResumeBtn.addEventListener('click', () => {
+                const text = resumeOutput.textContent;
+                if (text && text !== "Generating..." && text !== "Error generating content. Please try again.") {
+                    playAudioFromText(text, playResumeText);
+                } else {
+                    showMessage("Please generate a resume first.", 'error');
+                }
+            });
+
+            // Initialize Firebase on window load
+            window.onload = initFirebase;
+        </script>
+    </body>
+
+</html>
