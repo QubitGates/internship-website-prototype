@@ -6,12 +6,12 @@ This is a high-fidelity internship management portal built from my first hackath
 The portal unifies students, mentors, and placement cell coordinators onto a single platform.
 
 * **Real-time:** Stores and syncs data instantly using **Firebase**.
-* **AI-Powered:** Generates resumes, cover letters, and job descriptions using **Google Generative AI**.
-* **Live Demo:** [https://sih-first.web.app/](https://sih-first.web.app/)
+* **AI-Powered:** Generates resumes, cover letters, and job descriptions using **Google Generative AI Studio**.
+* **Live Demo:** [https://internship-website-prototype.web.app/](https://internship-website-prototype.web.app/)
 
 ### 🟢 Project Status
 **Status:** Prototype Complete (Functional MVP)  
-**Deployed:** September 27, 2025
+**Deployed:** October 5, 2025
 
 ---
 
